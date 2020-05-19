@@ -35,12 +35,6 @@ class NewProjectActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_new_project)
-        //val database = Database(this@NewProjectActivity, null, null, 1)
-        /*try {
-            database.openDatabase()
-        } catch (e: Exception) {
-            throw Error("Open database error")
-        }*/
         var prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         archived = prefs.getBoolean("display", false)
         url = prefs.getString("url", "fcds.cs.put.poznan.pl/MyWeb/BL/").toString()
@@ -62,28 +56,6 @@ class NewProjectActivity : AppCompatActivity() {
         } else {
             val downloadXML = DownloadXML()
             downloadXML.execute()
-
-            /*try {
-                val completeUrl = URL(url + setnumber + ".xml")
-                Log.e("tag", url + setnumber + ".xml")
-                val documentbf: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
-                val documentBuilder: DocumentBuilder = documentbf.newDocumentBuilder()
-                val document: Document = documentBuilder.parse(InputSource(completeUrl.openStream()))
-                document.documentElement.normalize()
-                val items = document.getElementsByTagName("ITEM")
-                database.addInventory(name)
-                val Id = database.getInventoryId(name)
-                val lacking = database.addInventoriesParts(Id, items)
-                if (lacking != "") {
-                    val toast = Toast.makeText(baseContext, "Elements not found in database: $lacking", Toast.LENGTH_LONG)
-                    toast.show()
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                val toast = Toast.makeText(baseContext, "Failed on collecting set data. URL adress may be wrong", Toast.LENGTH_LONG)
-                toast.show()
-                return
-            }*/
         }
     }
 

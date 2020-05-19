@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
@@ -46,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         archived = prefs.getBoolean("display", false)
         url = prefs.getString("url", "http://fcds.cs.put.poznan.pl/MyWeb/BL/").toString()
         /////////////////////////-------------------------------------------------------
-        Toast.makeText(getActivity(this), archived.toString() + url, Toast.LENGTH_LONG).show()
+        //Toast.makeText(getActivity(this), archived.toString() + url, Toast.LENGTH_LONG).show()
         /////////////////////////////---------------------------------------------------
         refillProjectList()
     }
@@ -96,7 +97,17 @@ class MainActivity : AppCompatActivity() {
             val tableRow: TableRow = TableRow(this)
             val textView: TextView = TextView(this)
             textView.setText(i)
+            textView.textSize = 20F
             tableRow.addView(textView)
+
+            tableRow.setOnClickListener{
+                val projectNameTextView: TextView = tableRow.getChildAt(0) as TextView
+                val projectName: String = projectNameTextView.text.toString()
+                val i = Intent(baseContext, ProjectActivity::class.java)
+                i.putExtra("projectName", projectName)
+                Log.i("tag", projectName)
+                startActivity(i)
+            }
             tableLayout.addView(tableRow)
         }
     }

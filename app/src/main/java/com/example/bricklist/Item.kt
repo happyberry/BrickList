@@ -15,20 +15,21 @@ import java.net.URL
 class Item {
     var id: Int? = null
     var itemType: String? = null
-    var code: String? = null
+    var itemId: Int? = -9
     var quantityInSet: Int? = null
     var quantityInStore: Int? = 0
     var colorCode: Int? = null
-    var color: String? = null
     var extra: Boolean? = null
-    var alternate: Boolean? = null
-    var itemId: Int? = -9
+
+    var colorName: String? = null
+    var code: String? = null
     var designId: Int? = null
     var image: Bitmap? = null
     var imageSrc: String? = null
     var name: String = ""
+    //var alternate: Boolean? = null
 
-    constructor(id: Int, itemType: String, itemId: Int, quantityInSet: Int, quantityInStore: Int, colorCode: Int, extra: Boolean, alternate: Boolean){
+    constructor(id: Int, itemType: String, itemId: Int, quantityInSet: Int, quantityInStore: Int, colorCode: Int, extra: Boolean){
         this.id = id
         this.itemType = itemType
         this.itemId = itemId
@@ -36,13 +37,13 @@ class Item {
         this.quantityInStore = quantityInStore
         this.colorCode = colorCode
         this.extra = extra
-        this.alternate = alternate
+        //this.alternate = alternate
     }
 
     constructor()
 
     fun showItem() {
-        Log.i("StateChange", "itemId: " + itemId + " qInSet: " + quantityInSet + " qInStore: " + quantityInStore + " image: " + image + " designId: " + designId + " color: " + color)
+        Log.i("StateChange", "itemId: " + itemId + " qInSet: " + quantityInSet + " qInStore: " + quantityInStore + " image: " + image + " designId: " + designId + " color: " + colorName)
     }
 
 
@@ -66,7 +67,7 @@ class Item {
                 }
             } catch (e: IOException) {
                 try {
-                    url = "http://img.bricklink.com/P/" + item.color + "/" + item.code + ".gif"
+                    url = "http://img.bricklink.com/P/" + item.colorName + "/" + item.code + ".gif"
 
                     BufferedInputStream(URL(url).content as InputStream).use {
                         val baf = ArrayList<Byte>()
