@@ -65,6 +65,8 @@ class ProjectActivity : AppCompatActivity() {
             tableLayout.addView(tableRowQt)
 
             var linearLayout = LinearLayout(this)
+            linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+            linearLayout.weightSum = 2f
             val plusButton: Button = createButton("+")
             plusButton.setText("+")
             plusButton.setOnClickListener{
@@ -78,13 +80,18 @@ class ProjectActivity : AppCompatActivity() {
             minusButton.setOnClickListener{
                 if (i.quantityInStore != 0) {
                     i.quantityInStore = i.quantityInStore?.minus(1)
+                    val quantity: TextView = tableRowQt.getChildAt(0) as TextView
+                    quantity.text = i.quantityInStore.toString() + " out of " + i.quantityInSet.toString() + "\n"
                     this.itemList = itemList
+                } else {
+                    Toast.makeText(this, "The quantity cannot be less than zero", Toast.LENGTH_LONG).show()
                 }
             }
+            tableLayout.addView(tableRowButtons)
+            tableRowButtons.addView(linearLayout)
             linearLayout.addView(plusButton)
             linearLayout.addView(minusButton)
-            tableRowButtons.addView(linearLayout)
-            tableLayout.addView(tableRowButtons)
+
         }
         return itemList
     }
@@ -154,6 +161,8 @@ class ProjectActivity : AppCompatActivity() {
             1f
         )
         button.textSize = 25F
+        button.setBackgroundColor(Color.parseColor("#FFFFFF"))
+        //button.maxWidth = 150
         return button
     }
 

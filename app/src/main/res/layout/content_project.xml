@@ -7,16 +7,20 @@
     android:layout_marginTop="60dp"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".ProjectActivity"
-    tools:showIn="@layout/activity_project">
+    tools:showIn="@layout/activity_project"
+    android:layout_marginLeft="15dp"
+    android:layout_marginRight="15dp">
 
     <TableLayout
         android:id="@+id/tableLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="match_parent"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp">
 
         <TableRow
             android:layout_width="match_parent"
-            android:layout_height="match_parent" >
+            android:layout_height="match_parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
