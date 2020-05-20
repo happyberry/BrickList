@@ -5,10 +5,15 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteOpenHelper
+import android.graphics.BitmapFactory
+import android.os.AsyncTask
 import android.util.Log
 import org.w3c.dom.NodeList
+import java.io.BufferedInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
+import java.net.URL
 import kotlin.collections.ArrayList
 
 class Database(var context: Context, name: String?, factory: SQLiteDatabase.CursorFactory?, version: Int): SQLiteOpenHelper(context, DATABASE_NAME, factory, DATABASE_VERSION) {
@@ -18,7 +23,6 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         private val DATABASE_VERSION = 1
     }
     var connection: SQLiteDatabase? = null
-    var archived = false
     var name = "BrickList.db"
     var path = "/data/data/com.example.bricklist/databases/"
 
@@ -33,7 +37,9 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         var isDB: SQLiteDatabase? = null
         try {
             isDB = SQLiteDatabase.openDatabase(path + name, null, SQLiteDatabase.OPEN_READONLY)
-        } catch (e: SQLiteException) {}
+        } catch (e: SQLiteException) {
+
+        }
         if (isDB != null) {
             isDB.close()
         } else {
@@ -81,6 +87,7 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         if (cursor != null && !cursor.isClosed) {
             cursor.close()
         }
+        db.close()
         return inventoriesList
     }
 
@@ -98,13 +105,13 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
     }
 
     fun addInventoriesParts(inventoryId: Int, items: NodeList): String{
-        val db = this.writableDatabase
+        var db = this.writableDatabase
         db.beginTransaction()
         var lacking = ""
         for (i in 0 until items.length){
             val properties = items.item(i).childNodes
-            Log.i("XD", properties.item(7).textContent.toString())
             val itemType = getTypeId(properties.item(1).textContent.toString().trim())
+            val itemId = getItemId(properties.item(3).textContent.toString().trim())
             var values = ContentValues()
             values.put("InventoryID", inventoryId)
             values.put("TypeID", itemType)
@@ -112,12 +119,21 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
             values.put("QuantityInSet", properties.item(5).textContent.toString().trim())
             values.put("QuantityInStore", 0)
             values.put("ColorID", properties.item(7).textContent.toString().trim().toInt())
-            if (itemType == -1) {
-                val colorname = getColorByCode(properties.item(7).textContent.toString().trim().toInt())
+            val colorname = getColorByCode(properties.item(7).textContent.toString().trim().toInt())
+            if (itemType == -1 || itemId == -1) {
                 lacking += itemType.toString() + " " + colorname + ", "
             } else {
-                Log.e("tag", "dodanie czesci do bazy")
                 db.insert("InventoriesParts", null, values)
+                val colorId = getColorIdByCode(properties.item(7).textContent.toString().trim().toInt())
+                val designId = getDesignId(colorId, itemId)
+                if (designId != -1) {
+                    val imageFound = checkIfImageInDatabase(designId)
+                    if (!imageFound) {
+                        Log.e("DOWNLOAD", "Pobieranie zdjecia do bazy" + designId.toString())
+                        Log.e("DOWNLOAD", colorname + properties.item(3).textContent.toString().trim())
+                        DownloadImage(colorname, properties.item(3).textContent.toString().trim(), designId, "https://www.lego.com/service/bricks/5/2/" + designId.toString()).execute()
+                    }
+                }
             }
         }
         if (lacking != "") {
@@ -161,7 +177,7 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
 
     fun getColorByCode(code: Int): String {
         val db = this.readableDatabase
-        val query = "select * from Colors where Code = code"
+        val query = "select * from Colors where Code = ${code}"
         val cursor = db.rawQuery(query, null)
         cursor.moveToFirst()
         val colorName = cursor.getString(2)
@@ -171,12 +187,40 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
 
     fun getColorIdByCode(code: Int): Int {
         val db = this.readableDatabase
-        val query = "select * from Colors where Code = code"
+        val query = "select * from Colors where Code = ${code}"
         val cursor = db.rawQuery(query, null)
         cursor.moveToFirst()
         val colorId = cursor.getInt(0)
         cursor.close()
         return colorId
+    }
+
+    fun getItemId(code: String): Int {
+        val db = this.readableDatabase
+        val query = "select id from Parts where Code like \"${code}\""
+        val cursor = db.rawQuery(query, null)
+        if (cursor.count <= 0) {
+            cursor.close()
+            return -1
+        }
+        cursor.moveToFirst()
+        val itemId = cursor.getInt(0)
+        cursor.close()
+        return itemId
+    }
+
+    fun getDesignId(color: Int, item: Int): Int {
+        val db = this.readableDatabase
+        val query = "select Code from Codes where ColorID=${color} and ItemID=${item}"
+        val cursor = db.rawQuery(query, null)
+        if (cursor.count <= 0) {
+            cursor.close()
+            return -1
+        }
+        cursor.moveToFirst()
+        val designId = cursor.getInt(0)
+        cursor.close()
+        return designId
     }
 
     fun getInventoryParts(name: String): ArrayList<Item>{
@@ -189,13 +233,11 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
             items.add(Item(cursor.getInt(0), cursor.getString(2), cursor.getInt(3), cursor.getInt(4), cursor.getInt(5), cursor.getInt(6), cursor.getInt(7) == 1))
         }
         while(cursor.moveToNext()) {
-            Log.e("tag","Wybrano czesc z bazy")
             items.add(Item(cursor.getInt(0), cursor.getString(2), cursor.getInt(3), cursor.getInt(4), cursor.getInt(5), cursor.getInt(6), cursor.getInt(7) == 1))
         }
         if (cursor != null && !cursor.isClosed) {
             cursor.close()
         }
-        Log.e("tag", items.size.toString())
         return items
     }
 
@@ -230,6 +272,23 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         return items
     }
 
+    fun getItemsIds(items: ArrayList<Item>): ArrayList<Item>{
+        items.forEach {
+            val query = "select _id from Parts where Code=\"${it.code}\""
+            val db = this.readableDatabase
+            val cursor = db.rawQuery(query, null)
+            if(cursor.moveToFirst()) {
+                it.itemId = cursor.getInt(0)
+            } else {
+                it.itemId = -9
+            }
+            if (cursor != null && !cursor.isClosed) {
+                cursor.close()
+            }
+        }
+        return items
+    }
+
     fun getItemsNames(items: ArrayList<Item>): ArrayList<Item>{
         items.forEach {
             val query = "select Name from Parts where id=${it.itemId}"
@@ -247,7 +306,6 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
 
     fun getColorNames(items: ArrayList<Item>): ArrayList<Item>{
         items.forEach{
-            Log.e("kolorek", it.colorCode.toString())
             val query = "select Name from Colors where code=\"${it.colorCode}\""
             val db = this.readableDatabase
             val cursor = db.rawQuery(query, null)
@@ -274,7 +332,6 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
 
     fun updateQuantity(items: ArrayList<Item>?, name: String){
         if (items != null) {
-            Log.e("update", "part update")
             items.forEach {
                 val id: Int = getInventoryId(name)
                 val db = this.writableDatabase
@@ -284,6 +341,116 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
                 writableDatabase.setTransactionSuccessful()
                 writableDatabase.endTransaction()
             }
+        }
+    }
+
+    fun getItemImage(item: Item): Item {
+        val query = "select Image from Codes where Code=" + item.designId + ";"
+        val db = this.readableDatabase
+        val cursor = db.rawQuery(query, null)
+        val blob: ByteArray?
+        if (cursor.moveToFirst()) {
+            blob = cursor.getBlob(0)
+            if (blob != null) {
+                item.image = BitmapFactory.decodeByteArray(blob, 0, blob.size)
+                Log.i("INFO", item.code + item.colorName + "pobieranie obrazu z bazy")
+            }
+        }
+        if (cursor != null && !cursor.isClosed) {
+            cursor.close()
+        }
+        return item
+    }
+
+    fun checkIfImageInDatabase(designId: Int): Boolean{
+        val query = "select Image from Codes where Code=" + designId + ";"
+        val db = this.readableDatabase
+        val cursor = db.rawQuery(query, null)
+        val blob: ByteArray?
+        if (cursor.moveToFirst()) {
+            blob = cursor.getBlob(0)
+            if (blob == null) {
+                return false
+            }
+        }
+        if (cursor != null && !cursor.isClosed) {
+            cursor.close()
+        }
+        return true
+    }
+
+    fun saveImageToDatabase(designId: Int, image:ContentValues){
+        val db = writableDatabase
+        db.beginTransaction()
+        val selection = "Code=" + designId + ";"
+        db.update("CODES", image, selection, null)
+        db.setTransactionSuccessful()
+        db.endTransaction()
+        db.close()
+    }
+
+    inner class DownloadImage(private var colorName: String, private var code: String, private var designId: Int, private var url: String): AsyncTask<String, Int, String>() {
+        override fun doInBackground(vararg params: String?): String {
+            try {
+                BufferedInputStream(URL(url).content as InputStream).use {
+                    Log.i("link", url)
+                    val baf = ArrayList<Byte>()
+                    var current: Int
+                    while (true) {
+                        current = it.read()
+                        if (current == -1)
+                            break
+                        baf.add(current.toByte())
+                    }
+                    val blob = baf.toByteArray()
+                    val blobValues = ContentValues()
+                    blobValues.put("Image", blob)
+                    saveImageToDatabase(designId, blobValues)
+                }
+            } catch (e: IOException) {
+                try {
+                    url = "http://img.bricklink.com/P/" + colorName + "/" + code + ".gif"
+                    Log.i("link", url)
+                    BufferedInputStream(URL(url).content as InputStream).use {
+                        val baf = ArrayList<Byte>()
+                        var current: Int
+                        while (true) {
+                            current = it.read()
+                            if (current == -1)
+                                break
+                            baf.add(current.toByte())
+                        }
+                        val blob = baf.toByteArray()
+                        val blobValues = ContentValues()
+                        blobValues.put("Image", blob)
+                        saveImageToDatabase(designId, blobValues)
+                    }
+                } catch (e: IOException) {
+                    try {
+                        url = "https://www.bricklink.com/PL/" + code + ".jpg"
+                        Log.i("link", url)
+                        BufferedInputStream(URL(url).content as InputStream).use {
+                            val baf = ArrayList<Byte>()
+                            var current: Int
+                            while (true) {
+                                current = it.read()
+                                if (current == -1)
+                                    break
+                                baf.add(current.toByte())
+                            }
+                            val blob = baf.toByteArray()
+                            val blobValues = ContentValues()
+                            blobValues.put("Image", blob)
+                            saveImageToDatabase(designId, blobValues)
+                        }
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        return "IOException"
+                    }
+                }
+            }
+            Log.e("XDDDDDD", "POBRANO COS TAM")
+            return "success"
         }
     }
 }

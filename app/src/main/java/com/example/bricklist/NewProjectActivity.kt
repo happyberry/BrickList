@@ -31,6 +31,7 @@ class NewProjectActivity : AppCompatActivity() {
     var archived = false
     var setNumber = 0
     var projectName = ""
+    var success = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,6 +58,8 @@ class NewProjectActivity : AppCompatActivity() {
             val downloadXML = DownloadXML()
             downloadXML.execute()
         }
+
+        finish()
     }
 
     private inner class DownloadXML() : AsyncTask<String, Int, String>() {
@@ -89,11 +92,13 @@ class NewProjectActivity : AppCompatActivity() {
             } else if (result != "") {
                 val toast = Toast.makeText(this@NewProjectActivity, "Elements not found in database: " + result, Toast.LENGTH_LONG)
                 toast.show()
+                sleep(100)
+                success = true
             } else {
                 val toast = Toast.makeText(this@NewProjectActivity, "Project added successfully" + result, Toast.LENGTH_LONG)
                 toast.show()
-                sleep(2)
-                finish()
+                sleep(100)
+                success = true
             }
         }
     }
