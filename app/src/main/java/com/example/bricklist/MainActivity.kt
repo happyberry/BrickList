@@ -82,9 +82,6 @@ class MainActivity : AppCompatActivity() {
         var prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         archived = prefs.getBoolean("display", false)
         url = prefs.getString("url", "fcds.cs.put.poznan.pl/MyWeb/BL/").toString()
-        /////////////////////////-------------------------------------------------------
-        Toast.makeText(getActivity(this), archived.toString() + url, Toast.LENGTH_LONG).show()
-        /////////////////////////////---------------------------------------------------
         refillProjectList()
         super.onResume()
     }

@@ -146,6 +146,26 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         return lacking
     }
 
+    fun addPartsImages(items: NodeList){
+        for (i in 0 until items.length){
+            val properties = items.item(i).childNodes
+            val itemType = getTypeId(properties.item(1).textContent.toString().trim())
+            val itemId = getItemId(properties.item(3).textContent.toString().trim())
+            val colorname = getColorByCode(properties.item(7).textContent.toString().trim().toInt())
+            if (itemType != -1 && itemId != -1) {
+                val colorId = getColorIdByCode(properties.item(7).textContent.toString().trim().toInt())
+                val designId = getDesignId(colorId, itemId)
+                if (designId != -1) {
+                    val imageFound = checkIfImageInDatabase(designId)
+                    if (!imageFound) {
+                        Log.e("DOWNLOAD", "Pobieranie zdjecia do bazy" + designId.toString())
+                        Log.e("DOWNLOAD", colorname + properties.item(3).textContent.toString().trim())
+                        DownloadImage(colorname, properties.item(3).textContent.toString().trim(), designId, "https://www.lego.com/service/bricks/5/2/" + designId.toString()).execute()
+                    }
+                }
+            }
+        }
+    }
 
     fun getInventoryId(name: String): Int {
         val db = this.readableDatabase
@@ -223,6 +243,28 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         return designId
     }
 
+    fun getItemsDesignIds(items: ArrayList<Item>): ArrayList<Item>{
+        items.forEach {
+            val colorId = getColorIdByCode(it.colorCode!!)
+            val itemId = getItemId(it.itemId.toString())
+            Log.i("DOWNLOAD", colorId.toString() + " " + itemId.toString())
+            val query = "select Code from Codes where ColorID=${colorId} and ItemID=${itemId}"
+            val db = this.readableDatabase
+            val cursor = db.rawQuery(query, null)
+            if (cursor.moveToFirst()) {
+                it.designId = cursor.getInt(0)
+                Log.i("DOWN", it.designId.toString())
+            } else {
+                it.designId = null
+            }
+            if (cursor != null && !cursor.isClosed) {
+                cursor.close()
+            }
+
+        }
+        return items
+    }
+
     fun getInventoryParts(name: String): ArrayList<Item>{
         val inventoryId = getInventoryId(name)
         val query = "select * from InventoriesParts where InventoryID = $inventoryId"
@@ -255,22 +297,7 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         return true
     }
 
-    fun getItemsDesignIds(items: ArrayList<Item>): ArrayList<Item>{
-        items.forEach {
-            if (checkIfDesignIDExists(it.colorCode!!, it.itemId!!)) {
-                val query = "select Code from Codes where ColorID=${it.colorCode} and ItemID=${it.itemId}"
-                val db = this.readableDatabase
-                val cursor = db.rawQuery(query, null)
-                if(cursor.moveToFirst()) {
-                    it.designId = cursor.getInt(0)
-                }
-                if (cursor != null && !cursor.isClosed) {
-                    cursor.close()
-                }
-            }
-        }
-        return items
-    }
+
 
     fun getItemsIds(items: ArrayList<Item>): ArrayList<Item>{
         items.forEach {
@@ -353,7 +380,6 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
             blob = cursor.getBlob(0)
             if (blob != null) {
                 item.image = BitmapFactory.decodeByteArray(blob, 0, blob.size)
-                Log.i("INFO", item.code + item.colorName + "pobieranie obrazu z bazy")
             }
         }
         if (cursor != null && !cursor.isClosed) {

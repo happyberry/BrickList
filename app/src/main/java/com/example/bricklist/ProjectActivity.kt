@@ -49,12 +49,19 @@ class ProjectActivity : AppCompatActivity() {
         tableLayout.removeAllViews()
         for (i in itemList) {
             val tableRowInfo = TableRow(this)
+            tableLayout.addView(tableRowInfo)
             val tableRowButtons= TableRow(this)
+            tableLayout.addView(tableRowButtons)
             val itemInfo = TextView(this)
             var linearLayoutInfo = LinearLayout(this)
+            tableRowInfo.addView(linearLayoutInfo)
+            linearLayoutInfo.setOrientation(LinearLayout.HORIZONTAL);
+            //linearLayoutInfo.weightSum = 2f
             var image  = ImageView(this)
             image.minimumHeight = 250
             image.minimumWidth = 250
+            image.maxHeight = 350
+            image.maxWidth=350
             image.setImageBitmap(i.image)
             image.layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -63,9 +70,13 @@ class ProjectActivity : AppCompatActivity() {
             )
             itemInfo.text = i.name + "\n" + i.colorName + "\n" + i.quantityInStore.toString() + " out of " + i.quantityInSet.toString() + "\n"
             linearLayoutInfo.setOrientation(LinearLayout.HORIZONTAL);
-            linearLayoutInfo.weightSum = 2f
-            tableLayout.addView(tableRowInfo)
-            tableRowInfo.addView(linearLayoutInfo)
+            itemInfo.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
+
             linearLayoutInfo.addView(image)
             linearLayoutInfo.addView(itemInfo)
 
@@ -99,7 +110,7 @@ class ProjectActivity : AppCompatActivity() {
                     Toast.makeText(this, "The quantity cannot be less than zero", Toast.LENGTH_LONG).show()
                 }
             }
-            tableLayout.addView(tableRowButtons)
+
             tableRowButtons.addView(linearLayoutButtons)
             linearLayoutButtons.addView(plusButton)
             linearLayoutButtons.addView(minusButton)

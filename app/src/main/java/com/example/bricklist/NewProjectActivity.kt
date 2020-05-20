@@ -58,8 +58,8 @@ class NewProjectActivity : AppCompatActivity() {
             val downloadXML = DownloadXML()
             downloadXML.execute()
         }
-
-        finish()
+        sleep(100L)
+        onBackPressed()
     }
 
     private inner class DownloadXML() : AsyncTask<String, Int, String>() {
@@ -77,6 +77,7 @@ class NewProjectActivity : AppCompatActivity() {
                 database.addInventory(projectName)
                 val Id = database.getInventoryId(projectName)
                 val lacking = database.addInventoriesParts(Id, items)
+                database.addPartsImages(items)
                 return lacking
             } catch (e: Exception) {
                 e.printStackTrace()
