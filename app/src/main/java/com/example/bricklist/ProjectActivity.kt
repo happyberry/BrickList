@@ -1,8 +1,11 @@
 package com.example.bricklist
 
 import android.Manifest
+import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -15,7 +18,11 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.internal.ContextUtils.getActivity
 import kotlinx.android.synthetic.main.activity_project.*
 import kotlinx.android.synthetic.main.content_project.*
+import java.io.BufferedInputStream
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.net.URL
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -38,12 +45,9 @@ class ProjectActivity : AppCompatActivity() {
         val database = Database(this@ProjectActivity, null, null, 1)
         database.updateInventoryDate(projectName)
         var partsList = database.getInventoryParts(projectName)
-        //partsList = database.getItemsDesignIds(partsList)
+        partsList = database.getItemsDesignIds(partsList)
         partsList = database.getItemsNames(partsList)
         partsList = database.getColorNames(partsList)
-        for (i: Int in 0 until partsList.size) {
-            partsList[i] = database.getItemImage(partsList[i])
-        }
         partsList = fillPartsList(partsList)
         itemList = partsList
         //TODO update parts quantity I PO WYJSCIU Z TEJ AKTYWNOSCI TEZ!!!!!!!
@@ -57,6 +61,7 @@ class ProjectActivity : AppCompatActivity() {
 
     fun fillPartsList(itemList: ArrayList<Item>): ArrayList<Item> {
         listView.removeAllViews()
+        var number = 10
         for (i in itemList) {
 
             var linearLayoutInfo = LinearLayout(this)
@@ -64,7 +69,10 @@ class ProjectActivity : AppCompatActivity() {
             linearLayoutInfo.setOrientation(LinearLayout.HORIZONTAL);
             linearLayoutInfo.weightSum = 2f
             var image  = ImageView(this)
-            image.setImageBitmap(i.image)
+            image.id = number
+            number = number + 10
+            //image.setImageBitmap(i.image)
+            DownloadImage(i.colorCode!!, i.itemId!!, "https://www.lego.com/service/bricks/5/2/" + i.designId.toString(), image.id).execute()
             image.minimumHeight = 350
             image.minimumWidth = 350
             //image.maxHeight = 350
@@ -178,7 +186,6 @@ class ProjectActivity : AppCompatActivity() {
             itemType.textContent = it.itemType
             item.appendChild(itemType)
             id.textContent = it.itemId.toString()
-            //TODO: check if this is id which is actually needed ;)
             item.appendChild(id)
             color.textContent = it.colorCode.toString()
             item.appendChild(color)
@@ -197,6 +204,42 @@ class ProjectActivity : AppCompatActivity() {
         //val file = File(path, filename)
         val file = File(Environment.getExternalStorageDirectory(), filename)
         transformer.transform(DOMSource(document), StreamResult(file))
+    }
+
+    inner class DownloadImage(private var colorCode: Int, private var code: String, private var url: String, private var imageId: Int): AsyncTask<String, Int, Pair<Int, Drawable>>() {
+        override fun doInBackground(vararg params: String?): Pair<Int, Drawable>? {
+            try {
+                val image = Drawable.createFromStream(BufferedInputStream(URL(url).content as InputStream), "src name")
+                return Pair(imageId, image)
+            } catch (e: IOException) {
+                try {
+                    url = "http://img.bricklink.com/P/" + colorCode + "/" + code + ".gif"
+                    Log.i("link", url)
+                    val image = Drawable.createFromStream(BufferedInputStream(URL(url).content as InputStream), "src name")
+                    return Pair(imageId, image)
+                } catch (e: IOException) {
+                    try {
+                        url = "https://www.bricklink.com/PL/" + code + ".jpg"
+                        Log.i("link", url)
+                        val image = Drawable.createFromStream(BufferedInputStream(URL(url).content as InputStream), "src name")
+                        return Pair(imageId, image)
+
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        return null
+                    }
+                }
+            }
+            return null
+        }
+
+        override fun onPostExecute(result: Pair<Int, Drawable>?) {
+            if (result != null){
+                val image = findViewById<ImageView>(result.first)
+                image.setImageDrawable(result.second)
+            }
+        }
+
     }
 
 
