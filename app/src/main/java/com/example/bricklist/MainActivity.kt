@@ -41,12 +41,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: IOException) {
             throw Error("Creating database error")
         }
-        val database = Database(this@MainActivity, null, null, 1)
-        /*try {
-            database.openDatabase()
-        } catch (e: Exception) {
-            throw Error("Open database error")
-        }*/
         var prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         archived = prefs.getBoolean("display", false)
         url = prefs.getString("url", "http://fcds.cs.put.poznan.pl/MyWeb/BL/").toString()

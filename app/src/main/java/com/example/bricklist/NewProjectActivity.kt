@@ -33,7 +33,6 @@ class NewProjectActivity : AppCompatActivity() {
     var archived = false
     var setNumber = 0
     var projectName = ""
-    var success = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +76,6 @@ class NewProjectActivity : AppCompatActivity() {
                 database.addInventory(projectName)
                 val Id = database.getInventoryId(projectName)
                 val lacking = database.addInventoriesParts(Id, items)
-                database.addPartsImages(items)
                 return lacking
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -88,8 +86,14 @@ class NewProjectActivity : AppCompatActivity() {
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             if (result.equals("BAD")) {
-                val toast = Toast.makeText(this@NewProjectActivity, "Failed on collecting set data. URL adress may be wrong", Toast.LENGTH_LONG)
-                toast.show()
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this@NewProjectActivity)
+                builder.setTitle("Import Failed")
+                builder.setMessage("Failed on collecting set data. URL address may be wrong")
+                builder.setPositiveButton("TRY AGAIN",
+                    DialogInterface.OnClickListener { dialog, which ->
+                        dialog.dismiss()
+                    })
+                builder.show()
             } else if (result != "") {
                 val builder: AlertDialog.Builder = AlertDialog.Builder(this@NewProjectActivity)
                 builder.setTitle("Import Successfull")

@@ -44,13 +44,14 @@ class ProjectActivity : AppCompatActivity() {
         this.findViewById<TextView>(R.id.activityTitle).setText(projectName)
         val database = Database(this@ProjectActivity, null, null, 1)
         database.updateInventoryDate(projectName)
-        var partsList = database.getInventoryParts(projectName)
-        partsList = database.getItemsDesignIds(partsList)
-        partsList = database.getItemsNames(partsList)
-        partsList = database.getColorNames(partsList)
-        partsList = fillPartsList(partsList)
-        itemList = partsList
-        //TODO update parts quantity I PO WYJSCIU Z TEJ AKTYWNOSCI TEZ!!!!!!!
+        fillPartsList()
+        //var partsList = database.getInventoryParts(projectName)
+        //partsList = database.getItemsDesignIds(partsList)
+        //partsList = database.getItemsNames(partsList)
+        //partsList = database.getColorNames(partsList)
+        //partsList = fillPartsList(partsList)
+        //itemList = partsList
+        //TODO update parts quantity PO WYJSCIU Z WIDOKU
     }
 
     override fun onBackPressed() {
@@ -59,10 +60,22 @@ class ProjectActivity : AppCompatActivity() {
         super.onBackPressed()
     }
 
-    fun fillPartsList(itemList: ArrayList<Item>): ArrayList<Item> {
+    override fun onResume() {
+        val database = Database(this@ProjectActivity, null, null, 1)
+        database.updateQuantity(itemList, projectName)
+        super.onResume()
+    }
+
+    fun fillPartsList() {
+        val database = Database(this@ProjectActivity, null, null, 1)
+        var partsList = database.getInventoryParts(projectName)
+        partsList = database.getItemsDesignIds(partsList)
+        partsList = database.getItemsNames(partsList)
+        partsList = database.getColorNames(partsList)
+        itemList = partsList
         listView.removeAllViews()
         var number = 10
-        for (i in itemList) {
+        for (i in itemList!!) {
 
             var linearLayoutInfo = LinearLayout(this)
             listView.addView(linearLayoutInfo)
@@ -71,26 +84,21 @@ class ProjectActivity : AppCompatActivity() {
             var image  = ImageView(this)
             image.id = number
             number = number + 10
-            //image.setImageBitmap(i.image)
             DownloadImage(i.colorCode!!, i.itemId!!, "https://www.lego.com/service/bricks/5/2/" + i.designId.toString(), image.id).execute()
             image.minimumHeight = 350
             image.minimumWidth = 350
-            //image.maxHeight = 350
-            //image.maxWidth=350
-            /*image.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )*/
+
             val itemInfo = TextView(this)
             itemInfo.text = i.name + "\n" + i.colorName + "\n" + i.quantityInStore.toString() + " out of " + i.quantityInSet.toString() + "\n"
+            itemInfo.textSize = 18F
             linearLayoutInfo.setOrientation(LinearLayout.HORIZONTAL);
-            itemInfo.layoutParams = LinearLayout.LayoutParams(
+            val params = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
             )
-
+            params.setMargins(35, 25, 25,25)
+            itemInfo.layoutParams = params
             linearLayoutInfo.addView(image)
             linearLayoutInfo.addView(itemInfo)
 
@@ -108,7 +116,7 @@ class ProjectActivity : AppCompatActivity() {
                     val info: TextView = linearLayoutInfo.getChildAt(1) as TextView
                     info.text =
                         i.name + "\n" + i.colorName + "\n" + i.quantityInStore.toString() + " out of " + i.quantityInSet.toString() + "\n"
-                    this.itemList = itemList
+                    this.itemList = partsList
                 } else {
                     Toast.makeText(this, "All elements already found", Toast.LENGTH_LONG).show()
                 }
@@ -119,7 +127,7 @@ class ProjectActivity : AppCompatActivity() {
                     i.quantityInStore = i.quantityInStore?.minus(1)
                     val quantity: TextView = linearLayoutInfo.getChildAt(1) as TextView
                     quantity.text = i.name + "\n" + i.colorName + "\n" + i.quantityInStore.toString() + " out of " + i.quantityInSet.toString() + "\n"
-                    this.itemList = itemList
+                    this.itemList = partsList
                 } else {
                     Toast.makeText(this, "The quantity cannot be less than zero", Toast.LENGTH_LONG).show()
                 }
@@ -129,7 +137,7 @@ class ProjectActivity : AppCompatActivity() {
             linearLayoutButtons.addView(minusButton)
 
         }
-        return itemList
+        itemList = partsList
     }
 
     fun createButton(text: String): Button{
@@ -142,13 +150,11 @@ class ProjectActivity : AppCompatActivity() {
         )
         button.textSize = 25F
         button.setBackgroundColor(Color.parseColor("#FFFFFF"))
-        //button.maxWidth = 150
         return button
     }
 
     fun export(v: View) {
         val filename = projectName + ".xml"
-        //TODO: filename popup
         try {
             exportToXML(filename)
         } catch (e: Exception) {
@@ -156,7 +162,7 @@ class ProjectActivity : AppCompatActivity() {
             Toast.makeText(this, "An error occured during export. Try again", Toast.LENGTH_LONG).show()
             return
         }
-        Toast.makeText(this, "Export finished succesfully", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Export finished succesfully. File saved in: " + Environment.getExternalStorageDirectory() + "/" + projectName + "xml", Toast.LENGTH_LONG).show()
     }
 
     fun exportToXML(filename: String) {

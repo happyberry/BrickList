@@ -42,8 +42,4 @@ class Item {
     }
 
     constructor()
-
-    fun showItem() {
-        Log.i("StateChange", "itemId: " + itemId + " qInSet: " + quantityInSet + " qInStore: " + quantityInStore + " image: " + image + " designId: " + designId + " color: " + colorName)
-    }
 }
