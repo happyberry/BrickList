@@ -15,7 +15,7 @@ import java.net.URL
 class Item {
     var id: Int? = null
     var itemType: String? = null
-    var itemId: Int? = -9
+    var itemId: String? = null
     var quantityInSet: Int? = null
     var quantityInStore: Int? = 0
     var colorCode: Int? = null
@@ -30,7 +30,7 @@ class Item {
 
     //var alternate: Boolean? = null
 
-    constructor(id: Int, itemType: String, itemId: Int, quantityInSet: Int, quantityInStore: Int, colorCode: Int, extra: Boolean){
+    constructor(id: Int, itemType: String, itemId: String, quantityInSet: Int, quantityInStore: Int, colorCode: Int, extra: Boolean){
         this.id = id
         this.itemType = itemType
         this.itemId = itemId

@@ -38,7 +38,7 @@ class ProjectActivity : AppCompatActivity() {
         val database = Database(this@ProjectActivity, null, null, 1)
         database.updateInventoryDate(projectName)
         var partsList = database.getInventoryParts(projectName)
-        partsList = database.getItemsDesignIds(partsList)
+        //partsList = database.getItemsDesignIds(partsList)
         partsList = database.getItemsNames(partsList)
         partsList = database.getColorNames(partsList)
         for (i: Int in 0 until partsList.size) {
