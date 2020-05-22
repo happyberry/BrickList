@@ -27,6 +27,7 @@ class Item {
     var image: Bitmap? = null
     var imageSrc: String? = null
     var name: String = ""
+
     //var alternate: Boolean? = null
 
     constructor(id: Int, itemType: String, itemId: Int, quantityInSet: Int, quantityInStore: Int, colorCode: Int, extra: Boolean){

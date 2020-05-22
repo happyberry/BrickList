@@ -1,5 +1,7 @@
 package com.example.bricklist
 
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.SharedPreferences
 import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
@@ -38,7 +40,7 @@ class NewProjectActivity : AppCompatActivity() {
         setContentView(R.layout.activity_new_project)
         var prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         archived = prefs.getBoolean("display", false)
-        url = prefs.getString("url", "fcds.cs.put.poznan.pl/MyWeb/BL/").toString()
+        url = prefs.getString("url", "http://fcds.cs.put.poznan.pl/MyWeb/BL/").toString()
     }
 
     fun addProject(v: View) {
@@ -58,8 +60,6 @@ class NewProjectActivity : AppCompatActivity() {
             val downloadXML = DownloadXML()
             downloadXML.execute()
         }
-        sleep(100L)
-        onBackPressed()
     }
 
     private inner class DownloadXML() : AsyncTask<String, Int, String>() {
@@ -91,16 +91,27 @@ class NewProjectActivity : AppCompatActivity() {
                 val toast = Toast.makeText(this@NewProjectActivity, "Failed on collecting set data. URL adress may be wrong", Toast.LENGTH_LONG)
                 toast.show()
             } else if (result != "") {
-                val toast = Toast.makeText(this@NewProjectActivity, "Elements not found in database: " + result, Toast.LENGTH_LONG)
-                toast.show()
-                sleep(100)
-                success = true
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this@NewProjectActivity)
+                builder.setTitle("Import Successfull")
+                builder.setMessage("Elements not found in database: " + result)
+                builder.setPositiveButton("OK",
+                    DialogInterface.OnClickListener { dialog, which ->
+                        dialog.dismiss()
+                        onBackPressed()
+                    })
+                builder.show()
             } else {
-                val toast = Toast.makeText(this@NewProjectActivity, "Project added successfully" + result, Toast.LENGTH_LONG)
-                toast.show()
-                sleep(100)
-                success = true
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this@NewProjectActivity)
+                builder.setTitle("Import Successfull")
+                builder.setMessage("Project added successfully")
+                builder.setPositiveButton("OK",
+                    DialogInterface.OnClickListener { dialog, which ->
+                        dialog.dismiss()
+                        onBackPressed()
+                    })
+                builder.show()
             }
+
         }
     }
 }

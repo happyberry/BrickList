@@ -1,17 +1,27 @@
 package com.example.bricklist
 
-import android.annotation.SuppressLint
-import android.content.Context
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.activity_project.toolbar
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.android.material.internal.ContextUtils.getActivity
+import kotlinx.android.synthetic.main.activity_project.*
+import kotlinx.android.synthetic.main.content_project.*
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+
 
 class ProjectActivity : AppCompatActivity() {
 
@@ -46,28 +56,25 @@ class ProjectActivity : AppCompatActivity() {
     }
 
     fun fillPartsList(itemList: ArrayList<Item>): ArrayList<Item> {
-        tableLayout.removeAllViews()
+        listView.removeAllViews()
         for (i in itemList) {
-            val tableRowInfo = TableRow(this)
-            tableLayout.addView(tableRowInfo)
-            val tableRowButtons= TableRow(this)
-            tableLayout.addView(tableRowButtons)
-            val itemInfo = TextView(this)
+
             var linearLayoutInfo = LinearLayout(this)
-            tableRowInfo.addView(linearLayoutInfo)
+            listView.addView(linearLayoutInfo)
             linearLayoutInfo.setOrientation(LinearLayout.HORIZONTAL);
-            //linearLayoutInfo.weightSum = 2f
+            linearLayoutInfo.weightSum = 2f
             var image  = ImageView(this)
-            image.minimumHeight = 250
-            image.minimumWidth = 250
-            image.maxHeight = 350
-            image.maxWidth=350
             image.setImageBitmap(i.image)
-            image.layoutParams = LinearLayout.LayoutParams(
+            image.minimumHeight = 350
+            image.minimumWidth = 350
+            //image.maxHeight = 350
+            //image.maxWidth=350
+            /*image.layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
-            )
+            )*/
+            val itemInfo = TextView(this)
             itemInfo.text = i.name + "\n" + i.colorName + "\n" + i.quantityInStore.toString() + " out of " + i.quantityInSet.toString() + "\n"
             linearLayoutInfo.setOrientation(LinearLayout.HORIZONTAL);
             itemInfo.layoutParams = LinearLayout.LayoutParams(
@@ -76,17 +83,16 @@ class ProjectActivity : AppCompatActivity() {
                 1f
             )
 
-
             linearLayoutInfo.addView(image)
             linearLayoutInfo.addView(itemInfo)
 
 
             var linearLayoutButtons = LinearLayout(this)
-            val plusButton: Button = createButton("+")
-            val minusButton: Button = createButton("-")
-
+            listView.addView(linearLayoutButtons)
             linearLayoutButtons.setOrientation(LinearLayout.HORIZONTAL);
             linearLayoutButtons.weightSum = 2f
+            val plusButton: Button = createButton("+")
+            val minusButton: Button = createButton("-")
 
             plusButton.setOnClickListener{
                 if (i.quantityInSet != i.quantityInStore) {
@@ -111,7 +117,6 @@ class ProjectActivity : AppCompatActivity() {
                 }
             }
 
-            tableRowButtons.addView(linearLayoutButtons)
             linearLayoutButtons.addView(plusButton)
             linearLayoutButtons.addView(minusButton)
 
@@ -132,6 +137,68 @@ class ProjectActivity : AppCompatActivity() {
         //button.maxWidth = 150
         return button
     }
+
+    fun export(v: View) {
+        val filename = projectName + ".xml"
+        //TODO: filename popup
+        try {
+            exportToXML(filename)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "An error occured during export. Try again", Toast.LENGTH_LONG).show()
+            return
+        }
+        Toast.makeText(this, "Export finished succesfully", Toast.LENGTH_LONG).show()
+    }
+
+    fun exportToXML(filename: String) {
+        if (Build.VERSION.SDK_INT >= 23) {
+            val permissionCheck = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this@ProjectActivity,
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    1
+                )
+            }
+        }
+        val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+        val document = documentBuilder.newDocument()
+        val rootElement = document.createElement("INVENTORY")
+        itemList!!.forEach {
+            val item = document.createElement("ITEM")
+            val itemType = document.createElement("ITEMTYPE")
+            val id = document.createElement("ITEMID")
+            val color = document.createElement("COLOR")
+            val quantity =document.createElement("QTYFIELD")
+
+            itemType.textContent = it.itemType
+            item.appendChild(itemType)
+            id.textContent = it.itemId.toString()
+            //TODO: check if this is id which is actually needed ;)
+            item.appendChild(id)
+            color.textContent = it.colorCode.toString()
+            item.appendChild(color)
+            val lack = it.quantityInSet!!.minus(it.quantityInStore!!)
+            if (lack != 0) {
+                quantity.textContent = lack.toString()
+                item.appendChild(quantity)
+            }
+            rootElement.appendChild(item)
+        }
+        document.appendChild(rootElement)
+        val path = this.filesDir
+        val transformer = TransformerFactory.newInstance().newTransformer()
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes")
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2")
+        //val file = File(path, filename)
+        val file = File(Environment.getExternalStorageDirectory(), filename)
+        transformer.transform(DOMSource(document), StreamResult(file))
+    }
+
 
 
 }

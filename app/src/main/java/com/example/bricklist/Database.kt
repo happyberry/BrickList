@@ -9,12 +9,8 @@ import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.util.Log
 import org.w3c.dom.NodeList
-import java.io.BufferedInputStream
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.InputStream
+import java.io.*
 import java.net.URL
-import kotlin.collections.ArrayList
 
 class Database(var context: Context, name: String?, factory: SQLiteDatabase.CursorFactory?, version: Int): SQLiteOpenHelper(context, DATABASE_NAME, factory, DATABASE_VERSION) {
 
@@ -34,21 +30,22 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
     }
 
     fun createDatabaseIfAbsent() {
-        var isDB: SQLiteDatabase? = null
+        /*var isDB: SQLiteDatabase? = null
         try {
             isDB = SQLiteDatabase.openDatabase(path + name, null, SQLiteDatabase.OPEN_READONLY)
-        } catch (e: SQLiteException) {
+        } catch (e: Exception) {
 
         }
         if (isDB != null) {
-            isDB.close()
-        } else {
-            //this.readableDatabase
+            isDB.close()*/
+        var file = File(path + name)
+        var fileExists = file.exists()
+        if (!fileExists) {
             try {
                 val myInput = context.assets.open(name)
                 val outFileName = path + name
                 val myOutput = FileOutputStream(outFileName)
-                val buffer = ByteArray(1024)
+                val buffer = ByteArray(100)
                 var length = myInput.read(buffer)
                 while (length > 0) {
                     myOutput.write(buffer, 0, length)
@@ -121,7 +118,7 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
             values.put("ColorID", properties.item(7).textContent.toString().trim().toInt())
             val colorname = getColorByCode(properties.item(7).textContent.toString().trim().toInt())
             if (itemType == -1 || itemId == -1) {
-                lacking += itemType.toString() + " " + colorname + ", "
+                lacking += "\n" + properties.item(3).textContent.toString().trim() + " color:" + colorname
             } else {
                 db.insert("InventoriesParts", null, values)
                 val colorId = getColorIdByCode(properties.item(7).textContent.toString().trim().toInt())
@@ -135,9 +132,6 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
                     }
                 }
             }
-        }
-        if (lacking != "") {
-            lacking = lacking.substring(0, lacking.length - 2)
         }
         db.setTransactionSuccessful()
         db.endTransaction()
@@ -475,8 +469,19 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
                     }
                 }
             }
-            Log.e("XDDDDDD", "POBRANO COS TAM")
             return "success"
         }
+    }
+
+    fun setProjectArchived(projectName: String) {
+        val id = getInventoryId(projectName)
+        val db = writableDatabase
+        db.beginTransaction()
+        val cv = ContentValues()
+        cv.put("active", "0")
+        db.update("INVENTORIES", cv, "id="+id, null);
+        db.setTransactionSuccessful()
+        db.endTransaction()
+        db.close()
     }
 }

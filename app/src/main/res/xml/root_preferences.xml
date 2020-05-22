@@ -5,7 +5,7 @@
         <EditTextPreference
             app:key="url"
             app:title="@string/url_title"
-            app:defaultValue="fcds.cs.put.poznan.pl/MyWeb/BL/"
+            app:defaultValue="http://fcds.cs.put.poznan.pl/MyWeb/BL/"
             app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
@@ -20,4 +20,12 @@
             app:defaultValue="false"
             />
     </PreferenceCategory>
+
+
+        <SwitchPreferenceCompat
+            app:key="display"
+            app:title="Display using tips"
+            app:defaultValue="true"
+            app:isPreferenceVisible="false"
+            />
 </PreferenceScreen>

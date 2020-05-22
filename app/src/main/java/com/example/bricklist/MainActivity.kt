@@ -1,43 +1,47 @@
 package com.example.bricklist
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.SharedPreferences.Editor
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.TableLayout
+import android.widget.LinearLayout
 import android.widget.TableRow
 import android.widget.TextView
-import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
-import com.google.android.material.internal.ContextUtils.getActivity
-
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
+
 
 class MainActivity : AppCompatActivity() {
 
-    //var database:Database? = null
     var url = ""
     var archived = false
+    var name = "BrickList.db"
+    var path = "/data/data/com.example.bricklist/databases/"
+    var tips = true
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
-        //this.database = Database(this)
-        val database = Database(this@MainActivity, null, null, 1)
         try {
-            database.createDatabaseIfAbsent()
+            createDatabaseIfAbsent()
         } catch (e: IOException) {
             throw Error("Creating database error")
         }
+        val database = Database(this@MainActivity, null, null, 1)
         /*try {
             database.openDatabase()
         } catch (e: Exception) {
@@ -46,9 +50,25 @@ class MainActivity : AppCompatActivity() {
         var prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         archived = prefs.getBoolean("display", false)
         url = prefs.getString("url", "http://fcds.cs.put.poznan.pl/MyWeb/BL/").toString()
-        /////////////////////////-------------------------------------------------------
-        //Toast.makeText(getActivity(this), archived.toString() + url, Toast.LENGTH_LONG).show()
-        /////////////////////////////---------------------------------------------------
+        tips = prefs.getBoolean("tips", true)
+        if (tips) {
+            val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+            builder.setTitle("Hello!")
+            builder.setMessage("If you want to archive inventory try long-pressing it's name. If you want to add new one tap the plus button in the right bottom corner")
+            builder.setPositiveButton("GOT IT",
+                DialogInterface.OnClickListener { dialog, which ->
+                    val editor: Editor = prefs.edit()
+                    editor.putBoolean("tips", false)
+                    editor.commit()
+                    dialog.dismiss()
+                })
+
+            builder.setNegativeButton("Show this message next time",
+                DialogInterface.OnClickListener { dialog, which ->
+                    dialog.dismiss()
+                })
+            builder.show()
+        }
         refillProjectList()
     }
 
@@ -94,8 +114,19 @@ class MainActivity : AppCompatActivity() {
             val tableRow: TableRow = TableRow(this)
             val textView: TextView = TextView(this)
             textView.setText(i)
-            textView.textSize = 20F
+            textView.textSize = 18F
             tableRow.addView(textView)
+            tableLayout.addView(tableRow)
+
+            val view = View(this)
+            tableLayout.addView(view)
+            val params: LinearLayout.LayoutParams =
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            params.height = 2
+            params.setMargins(0,35,0,35)
+            view.setBackgroundColor(Color.parseColor("#AAAAAA"))
+            view.layoutParams = params
+
 
             tableRow.setOnClickListener{
                 val projectNameTextView: TextView = tableRow.getChildAt(0) as TextView
@@ -105,12 +136,62 @@ class MainActivity : AppCompatActivity() {
                 Log.i("tag", projectName)
                 startActivity(i)
             }
-            tableLayout.addView(tableRow)
+            tableRow.setOnLongClickListener{
+                val projectNameTextView: TextView = tableRow.getChildAt(0) as TextView
+                val projectName: String = projectNameTextView.text.toString()
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+
+                builder.setTitle("Confirm")
+                builder.setMessage("Do you want to archive this inventory?")
+
+                builder.setPositiveButton("YES",
+                    DialogInterface.OnClickListener { dialog, which ->
+                        database.setProjectArchived(projectName)
+                        dialog.dismiss()
+                        refillProjectList()
+                    })
+
+                builder.setNegativeButton("NO",
+                    DialogInterface.OnClickListener { dialog, which ->
+                        // Do nothing
+                        dialog.dismiss()
+                    })
+                builder.show()
+                return@setOnLongClickListener true
+            }
+
         }
     }
 
     fun startAddNew(v: View) {
         val intent = Intent(this, NewProjectActivity::class.java).apply {}
         startActivity(intent)
+    }
+
+    fun createDatabaseIfAbsent() {
+        var file = File(path + name)
+        var fileExists = file.exists()
+        if (!fileExists) {
+            try {
+                val myInput = baseContext.assets.open(name)
+                val outDir = File("/data/data/com.example.bricklist/", "databases")
+                outDir.mkdir()
+                val outFileName = path + name
+                val myOutput = FileOutputStream(outFileName)
+                val buffer = ByteArray(100)
+                var length = myInput.read(buffer)
+                while (length > 0) {
+                    myOutput.write(buffer, 0, length)
+                    length = myInput.read(buffer)
+                }
+                myOutput.flush()
+                myOutput.close()
+                myInput.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+                throw Error("Error copying database")
+            }
+        }
+
     }
 }
