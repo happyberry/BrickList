@@ -1,7 +1,9 @@
 package com.example.bricklist
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.ContentValues
+import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -34,19 +36,19 @@ class ProjectActivity : AppCompatActivity() {
 
     var projectName: String = ""
     var itemList: ArrayList<Item>? = null
+    var imageBasicUrl = "https://www.lego.com/service/bricks/5/2/"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_project)
         setSupportActionBar(toolbar)
         this.projectName = intent.extras?.getString("projectName").toString()
-        Log.i("tag", projectName)
         this.findViewById<TextView>(R.id.activityTitle).setText(projectName)
+        this.activityTitle.visibility = View.INVISIBLE
         val database = Database(this@ProjectActivity, null, null, 1)
         database.updateInventoryDate(projectName)
         fillPartsList()
-        //TODO update parts quantity PO WYJSCIU Z WIDOKU
-        //TODO przerobić fill na wersje z ID i dorobić refill z aktualizacją tylko i wylacznie ilości
+        downloadImages()
     }
 
     override fun onBackPressed() {
@@ -78,8 +80,9 @@ class ProjectActivity : AppCompatActivity() {
             linearLayoutInfo.weightSum = 2f
             var image  = ImageView(this)
             image.id = number
+            i.imageId = number
             number = number + 10
-            DownloadImage(i.colorCode!!, i.itemId!!, "https://www.lego.com/service/bricks/5/2/" + i.designId.toString(), image.id).execute()
+            //DownloadImage(i.colorCode!!, i.itemId!!, "https://www.lego.com/service/bricks/5/2/" + i.designId.toString(), image.id).execute()
             image.minimumHeight = 350
             image.minimumWidth = 350
 
@@ -134,6 +137,13 @@ class ProjectActivity : AppCompatActivity() {
         itemList = partsList
     }
 
+    fun downloadImages() {
+        for (i in itemList!!) {
+            DownloadImage(i.colorCode!!, i.itemId!!, imageBasicUrl + i.designId.toString(), i.imageId).execute()
+        }
+    }
+
+
     fun createButton(text: String): Button{
         val button = Button(this)
         button.text = text
@@ -149,15 +159,29 @@ class ProjectActivity : AppCompatActivity() {
 
     fun export(v: View) {
         val filename = projectName + ".xml"
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
         try {
             exportToXML(filename)
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "An error occured during export. Try again", Toast.LENGTH_LONG).show()
+            builder.setTitle("Export failed")
+            builder.setMessage("An error occured during export. Try again")
+            builder.setPositiveButton("OK",
+                DialogInterface.OnClickListener { dialog, which ->
+                    dialog.dismiss()
+                })
+            builder.show()
+            //Toast.makeText(this, "An error occured during export. Try again", Toast.LENGTH_LONG).show()
             return
         }
-        Toast.makeText(this, "Export finished succesfully. File saved in: " + Environment.getExternalStorageDirectory() + "/" + projectName + "xml", Toast.LENGTH_LONG).show()
-        //TODO: prawdziwe okienko ładne z napisem o eksporcie
+        //Toast.makeText(this, "Export finished succesfully. File saved in: " + Environment.getExternalStorageDirectory() + "/" + projectName + "xml", Toast.LENGTH_LONG).show()
+        builder.setTitle("Success")
+        builder.setMessage("Export finished succesfully. File saved in:\n" + Environment.getExternalStorageDirectory() + "/" + projectName + "xml")
+        builder.setPositiveButton("Hooray!",
+            DialogInterface.OnClickListener { dialog, which ->
+                dialog.dismiss()
+            })
+        builder.show()
     }
 
     fun exportToXML(filename: String) {
@@ -213,13 +237,13 @@ class ProjectActivity : AppCompatActivity() {
             } catch (e: IOException) {
                 try {
                     url = "http://img.bricklink.com/P/" + colorCode + "/" + code + ".gif"
-                    Log.i("link", url)
+                    //Log.i("link", url)
                     val image = Drawable.createFromStream(BufferedInputStream(URL(url).content as InputStream), "src name")
                     return Pair(imageId, image)
                 } catch (e: IOException) {
                     try {
                         url = "https://www.bricklink.com/PL/" + code + ".jpg"
-                        Log.i("link", url)
+                        //Log.i("link", url)
                         val image = Drawable.createFromStream(BufferedInputStream(URL(url).content as InputStream), "src name")
                         return Pair(imageId, image)
 

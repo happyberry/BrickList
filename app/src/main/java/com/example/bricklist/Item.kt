@@ -24,6 +24,7 @@ class Item {
     var colorName: String? = null
     var designId: Int? = null
     var name: String = ""
+    var imageId: Int = -1
 
     constructor(id: Int, itemType: String, itemId: String, quantityInSet: Int, quantityInStore: Int, colorCode: Int, extra: Boolean){
         this.id = id
@@ -33,7 +34,6 @@ class Item {
         this.quantityInStore = quantityInStore
         this.colorCode = colorCode
         this.extra = extra
-        //this.alternate = alternate
     }
 
     constructor()

@@ -66,6 +66,11 @@ class MainActivity : AppCompatActivity() {
         refillProjectList()
     }
 
+    override fun onRestart() {
+        refillProjectList()
+        super.onRestart()
+    }
+
     fun openSettings() {
         val intent = Intent(this, SettingsActivity::class.java).apply {}
         startActivity(intent)

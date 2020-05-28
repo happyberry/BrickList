@@ -157,13 +157,13 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         items.forEach {
             val colorId = getColorIdByCode(it.colorCode!!)
             val itemId = getItemId(it.itemId.toString())
-            Log.i("DOWNLOAD", colorId.toString() + " " + itemId.toString())
+            //Log.i("DOWNLOAD", colorId.toString() + " " + itemId.toString())
             val query = "select Code from Codes where ColorID=${colorId} and ItemID=${itemId}"
             val db = this.readableDatabase
             val cursor = db.rawQuery(query, null)
             if (cursor.moveToFirst()) {
                 it.designId = cursor.getInt(0)
-                Log.i("DOWN", it.designId.toString())
+                //Log.i("DOWN", it.designId.toString())
             } else {
                 it.designId = null
             }
@@ -215,7 +215,7 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
             val cursor = db.rawQuery(query, null)
             if(cursor.moveToFirst()) {
                 it.colorName = cursor.getString(0)
-                Log.e("tag", it.colorName)
+                //Log.e("tag", it.colorName)
             }
             if (cursor != null && !cursor.isClosed) {
                 cursor.close()

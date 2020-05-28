@@ -67,7 +67,7 @@ class NewProjectActivity : AppCompatActivity() {
             try {
                 val database = Database(this@NewProjectActivity, null, null, 1)
                 val completeUrl = URL(url + setNumber + ".xml")
-                Log.e("tag", url + setNumber + ".xml")
+                //Log.e("tag", url + setNumber + ".xml")
                 val documentbf: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
                 val documentBuilder: DocumentBuilder = documentbf.newDocumentBuilder()
                 val document: Document = documentBuilder.parse(InputSource(completeUrl.openStream()))
@@ -93,11 +93,17 @@ class NewProjectActivity : AppCompatActivity() {
                     DialogInterface.OnClickListener { dialog, which ->
                         dialog.dismiss()
                     })
+                builder.setNegativeButton("QUIT",
+                    DialogInterface.OnClickListener { dialog, which ->
+                        // Do nothing
+                        dialog.dismiss()
+                        onBackPressed()
+                    })
                 builder.show()
             } else if (result != "") {
                 val builder: AlertDialog.Builder = AlertDialog.Builder(this@NewProjectActivity)
                 builder.setTitle("Import Successfull")
-                builder.setMessage("Elements not found in database: " + result)
+                builder.setMessage("Elements not found in database:\n" + result)
                 builder.setPositiveButton("OK",
                     DialogInterface.OnClickListener { dialog, which ->
                         dialog.dismiss()
