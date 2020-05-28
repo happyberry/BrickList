@@ -42,13 +42,12 @@ class ProjectActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_project)
         setSupportActionBar(toolbar)
+        supportActionBar!!.setDisplayShowTitleEnabled(false)
         this.projectName = intent.extras?.getString("projectName").toString()
         this.findViewById<TextView>(R.id.activityTitle).setText(projectName)
-        this.activityTitle.visibility = View.INVISIBLE
         val database = Database(this@ProjectActivity, null, null, 1)
         database.updateInventoryDate(projectName)
         fillPartsList()
-        downloadImages()
     }
 
     override fun onBackPressed() {
@@ -82,7 +81,7 @@ class ProjectActivity : AppCompatActivity() {
             image.id = number
             i.imageId = number
             number = number + 10
-            //DownloadImage(i.colorCode!!, i.itemId!!, "https://www.lego.com/service/bricks/5/2/" + i.designId.toString(), image.id).execute()
+            DownloadImage(i.colorCode!!, i.itemId!!, imageBasicUrl + i.designId.toString(), image.id).execute()
             image.minimumHeight = 350
             image.minimumWidth = 350
 
@@ -137,13 +136,6 @@ class ProjectActivity : AppCompatActivity() {
         itemList = partsList
     }
 
-    fun downloadImages() {
-        for (i in itemList!!) {
-            DownloadImage(i.colorCode!!, i.itemId!!, imageBasicUrl + i.designId.toString(), i.imageId).execute()
-        }
-    }
-
-
     fun createButton(text: String): Button{
         val button = Button(this)
         button.text = text
@@ -158,10 +150,13 @@ class ProjectActivity : AppCompatActivity() {
     }
 
     fun export(v: View) {
+        val database = Database(this@ProjectActivity, null, null, 1)
+        database.updateQuantity(itemList, projectName)
         val filename = projectName + ".xml"
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        var path = ""
         try {
-            exportToXML(filename)
+            path = exportToXML(filename)
         } catch (e: Exception) {
             e.printStackTrace()
             builder.setTitle("Export failed")
@@ -176,7 +171,7 @@ class ProjectActivity : AppCompatActivity() {
         }
         //Toast.makeText(this, "Export finished succesfully. File saved in: " + Environment.getExternalStorageDirectory() + "/" + projectName + "xml", Toast.LENGTH_LONG).show()
         builder.setTitle("Success")
-        builder.setMessage("Export finished succesfully. File saved in:\n" + Environment.getExternalStorageDirectory() + "/" + projectName + "xml")
+        builder.setMessage("Export finished succesfully. File saved in:\n" + path)
         builder.setPositiveButton("Hooray!",
             DialogInterface.OnClickListener { dialog, which ->
                 dialog.dismiss()
@@ -184,7 +179,7 @@ class ProjectActivity : AppCompatActivity() {
         builder.show()
     }
 
-    fun exportToXML(filename: String) {
+    fun exportToXML(filename: String): String {
         if (Build.VERSION.SDK_INT >= 23) {
             val permissionCheck = ContextCompat.checkSelfPermission(
                 this,
@@ -226,7 +221,12 @@ class ProjectActivity : AppCompatActivity() {
         transformer.setOutputProperty(OutputKeys.INDENT, "yes")
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2")
         val file = File(Environment.getExternalStorageDirectory(), filename)
+        /*val path = this.filesDir
+        val outDir = File(path, "Export")
+        outDir.mkdir()
+        val file = File(outDir, filename)*/
         transformer.transform(DOMSource(document), StreamResult(file))
+        return file.path
     }
 
     inner class DownloadImage(private var colorCode: Int, private var code: String, private var url: String, private var imageId: Int): AsyncTask<String, Int, Pair<Int, Drawable>>() {

@@ -35,7 +35,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
         android:onClick="startAddNew"
-        android:src="@android:drawable/ic_menu_add"
+        android:src="@drawable/ic_white_plus_bigger"
         app:backgroundTint="@color/colorPrimary" />
 
 
