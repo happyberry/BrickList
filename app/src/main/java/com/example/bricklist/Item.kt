@@ -22,13 +22,8 @@ class Item {
     var extra: Boolean? = null
 
     var colorName: String? = null
-    var code: String? = null
     var designId: Int? = null
-    var image: Bitmap? = null
-    var imageSrc: String? = null
     var name: String = ""
-
-    //var alternate: Boolean? = null
 
     constructor(id: Int, itemType: String, itemId: String, quantityInSet: Int, quantityInStore: Int, colorCode: Int, extra: Boolean){
         this.id = id

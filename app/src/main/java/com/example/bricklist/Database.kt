@@ -18,43 +18,12 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         private val DATABASE_NAME = "BrickList.db"
         private val DATABASE_VERSION = 1
     }
-    var connection: SQLiteDatabase? = null
-    var name = "BrickList.db"
-    var path = "/data/data/com.example.bricklist/databases/"
-
+    //var name = "BrickList.db"
 
     override fun onCreate(db: SQLiteDatabase?){
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-    }
-
-    fun createDatabaseIfAbsent() {
-        var file = File(path + name)
-        var fileExists = file.exists()
-        if (!fileExists) {
-            try {
-                val myInput = context.assets.open(name)
-                val outFileName = path + name
-                val myOutput = FileOutputStream(outFileName)
-                val buffer = ByteArray(100)
-                var length = myInput.read(buffer)
-                while (length > 0) {
-                    myOutput.write(buffer, 0, length)
-                    length = myInput.read(buffer)
-                }
-                myOutput.flush()
-                myOutput.close()
-                myInput.close()
-            } catch (e: IOException) {
-                throw Error("Error copying database")
-            }
-        }
-
-    }
-
-    fun openDatabase() {
-        connection = SQLiteDatabase.openDatabase(path+name, null, SQLiteDatabase.OPEN_READWRITE)
     }
 
     fun getProjects(archived: Boolean): ArrayList<String>{
@@ -118,7 +87,7 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         db.setTransactionSuccessful()
         db.endTransaction()
         db.close()
-        Log.e("tag", lacking)
+        Log.i("lacking parts", lacking)
         return lacking
     }
 
@@ -136,7 +105,21 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         return Id
     }
 
-    fun getTypeId(typeName: String): Int {
+    private fun getItemId(code: String): Int {
+        val db = this.readableDatabase
+        val query = "select id from Parts where Code like \"${code}\""
+        val cursor = db.rawQuery(query, null)
+        if (cursor.count <= 0) {
+            cursor.close()
+            return -1
+        }
+        cursor.moveToFirst()
+        val itemId = cursor.getInt(0)
+        cursor.close()
+        return itemId
+    }
+
+    private fun getTypeId(typeName: String): Int {
         val db = this.readableDatabase
         val query = "select * from ItemTypes where Code like \"$typeName\""
         val cursor = db.rawQuery(query, null)
@@ -150,7 +133,7 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         return Id
     }
 
-    fun getColorByCode(code: Int): String {
+    private fun getColorByCode(code: Int): String {
         val db = this.readableDatabase
         val query = "select * from Colors where Code = ${code}"
         val cursor = db.rawQuery(query, null)
@@ -160,7 +143,7 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         return colorName
     }
 
-    fun getColorIdByCode(code: Int): Int {
+    private fun getColorIdByCode(code: Int): Int {
         val db = this.readableDatabase
         val query = "select * from Colors where Code = ${code}"
         val cursor = db.rawQuery(query, null)
@@ -168,20 +151,6 @@ class Database(var context: Context, name: String?, factory: SQLiteDatabase.Curs
         val colorId = cursor.getInt(0)
         cursor.close()
         return colorId
-    }
-
-    fun getItemId(code: String): Int {
-        val db = this.readableDatabase
-        val query = "select id from Parts where Code like \"${code}\""
-        val cursor = db.rawQuery(query, null)
-        if (cursor.count <= 0) {
-            cursor.close()
-            return -1
-        }
-        cursor.moveToFirst()
-        val itemId = cursor.getInt(0)
-        cursor.close()
-        return itemId
     }
 
     fun getItemsDesignIds(items: ArrayList<Item>): ArrayList<Item>{

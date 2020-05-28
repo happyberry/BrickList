@@ -45,13 +45,8 @@ class ProjectActivity : AppCompatActivity() {
         val database = Database(this@ProjectActivity, null, null, 1)
         database.updateInventoryDate(projectName)
         fillPartsList()
-        //var partsList = database.getInventoryParts(projectName)
-        //partsList = database.getItemsDesignIds(partsList)
-        //partsList = database.getItemsNames(partsList)
-        //partsList = database.getColorNames(partsList)
-        //partsList = fillPartsList(partsList)
-        //itemList = partsList
         //TODO update parts quantity PO WYJSCIU Z WIDOKU
+        //TODO przerobić fill na wersje z ID i dorobić refill z aktualizacją tylko i wylacznie ilości
     }
 
     override fun onBackPressed() {
@@ -101,7 +96,6 @@ class ProjectActivity : AppCompatActivity() {
             itemInfo.layoutParams = params
             linearLayoutInfo.addView(image)
             linearLayoutInfo.addView(itemInfo)
-
 
             var linearLayoutButtons = LinearLayout(this)
             listView.addView(linearLayoutButtons)
@@ -163,6 +157,7 @@ class ProjectActivity : AppCompatActivity() {
             return
         }
         Toast.makeText(this, "Export finished succesfully. File saved in: " + Environment.getExternalStorageDirectory() + "/" + projectName + "xml", Toast.LENGTH_LONG).show()
+        //TODO: prawdziwe okienko ładne z napisem o eksporcie
     }
 
     fun exportToXML(filename: String) {
@@ -203,11 +198,9 @@ class ProjectActivity : AppCompatActivity() {
             rootElement.appendChild(item)
         }
         document.appendChild(rootElement)
-        val path = this.filesDir
         val transformer = TransformerFactory.newInstance().newTransformer()
         transformer.setOutputProperty(OutputKeys.INDENT, "yes")
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2")
-        //val file = File(path, filename)
         val file = File(Environment.getExternalStorageDirectory(), filename)
         transformer.transform(DOMSource(document), StreamResult(file))
     }
